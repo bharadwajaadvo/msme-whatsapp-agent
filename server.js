@@ -26,7 +26,8 @@ app.get("/webhook", (req, res) => {
 
   return res.sendStatus(403);
 });
-
+// Temporary conversation memory
+const conversations = new Map();
 // Ask Gemini
 const SYSTEM_PROMPT = ` 
 You are the official WhatsApp AI Assistant for Banking & MSME Support / MSME Legal Care.
@@ -109,7 +110,8 @@ Understand → Explain → Qualify → Identify Service → Collect Necessary In
 
 Do not behave like a generic chatbot. Behave as the front-desk and preliminary service-routing assistant for Banking & MSME Support.
 `;
-async function askGemini(userMessage) {
+
+async function askGemini(userMessage, conversationHistory = "") {
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" + process.env.GEMINI_API_KEY,
     {
@@ -122,7 +124,7 @@ async function askGemini(userMessage) {
           {
             parts: [
               {
-              text: SYSTEM_PROMPT + "\n\nCUSTOMER MESSAGE:\n" + userMessage
+              text: SYSTEM_PROMPT + "\n\nCONVERSATION HISTORY:\n" + conversationHistory + "\n\nLATEST CUSTOMER MESSAGE:\n" + userMessage
               }
             ]
           }
@@ -198,7 +200,17 @@ app.post("/webhook", (req, res) => {
       // For now, process only text messages
       if (!userText) return;
 
-      const geminiReply = await askGemini(userText);
+      const userId = message.from;
+const conversationHistory = conversations.get(userId) || "";
+
+const geminiReply = await askGemini(userText, conversationHistory);
+
+const updatedHistory =
+  conversationHistory +
+  "\nCustomer: " + userText +
+  "\nAssistant: " + geminiReply;
+
+conversations.set(userId, updatedHistory);
 
       console.log("Gemini reply:", geminiReply);
 await sendWhatsAppMessage(message.from, geminiReply);
