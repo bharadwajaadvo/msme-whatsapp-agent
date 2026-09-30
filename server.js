@@ -62,7 +62,38 @@ async function askGemini(userMessage) {
     "Sorry, I could not generate a response."
   );
 }
+// Send a text message through WhatsApp Cloud API
+async function sendWhatsAppMessage(to, text) {
+  const response = await fetch(
+    `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: to,
+        type: "text",
+        text: {
+          body: text
+        }
+      })
+    }
+  );
 
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `WhatsApp API error: ${response.status} ${errorText}`
+    );
+  }
+
+  const data = await response.json();
+  console.log("WhatsApp reply sent:", data);
+}
 // Receive WhatsApp webhook events
 app.post("/webhook", (req, res) => {
   // Acknowledge Meta immediately
@@ -89,7 +120,7 @@ app.post("/webhook", (req, res) => {
       const geminiReply = await askGemini(userText);
 
       console.log("Gemini reply:", geminiReply);
-
+await sendWhatsAppMessage(message.from, geminiReply);
       // Next step:
       // Send geminiReply back to the customer through WhatsApp.
     } catch (error) {
