@@ -111,7 +111,7 @@ Do not behave like a generic chatbot. Behave as the front-desk and preliminary s
 `;
 async function askGemini(userMessage) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" + process.env.GEMINI_API_KEY,
     {
       method: "POST",
       headers: {
@@ -122,10 +122,7 @@ async function askGemini(userMessage) {
           {
             parts: [
               {
-               text: `${SYSTEM_PROMPT}
-
-CUSTOMER MESSAGE:
-${userMessage}
+              text: SYSTEM_PROMPT + "\n\nCUSTOMER MESSAGE:\n" + userMessage
               }
             ]
           }
@@ -149,11 +146,11 @@ ${userMessage}
 // Send a text message through WhatsApp Cloud API
 async function sendWhatsAppMessage(to, text) {
   const response = await fetch(
-    `https://graph.facebook.com/v25.0/${process.env.PHONE_NUMBER_ID}/messages`,
+"https://graph.facebook.com/v25.0/" + process.env.PHONE_NUMBER_ID + "/messages",
     {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.WHATSAPP_TOKEN}`,
+       "Authorization": "Bearer " + process.env.WHATSAPP_TOKEN,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
